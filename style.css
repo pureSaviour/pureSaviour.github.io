@@ -129,8 +129,7 @@ main { padding-block: 75px 88px; }
 }
 
 .hello-code { margin-bottom: 28px; font-size: 13px; line-height: 1.9; }
-.hello-row { display: grid; grid-template-columns: 6ch minmax(0, 1fr); gap: 12px; align-items: baseline; }
-.hello-language { color: var(--muted); font-size: 11px; }
+.hello-row { display: block; }
 .hello-row code { min-width: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
 .code-function { color: #25636e; }
 .code-namespace, .code-type { color: #725394; }
