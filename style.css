@@ -110,7 +110,7 @@ a:focus-visible {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
-  padding-block: 36px;
+  padding-block: 22px;
 }
 
 .wordmark { font-size: 18px; font-weight: 550; letter-spacing: -0.6px; }
@@ -120,7 +120,7 @@ nav { display: flex; align-items: center; gap: 26px; font-size: 13px; }
 nav a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
 nav a:first-child { font-family: var(--chinese); }
 
-main { padding-block: 75px 88px; }
+main { padding-block: 28px 88px; }
 
 .eyebrow {
   margin: 0 0 24px;
@@ -194,11 +194,12 @@ h2 { margin: 0; font-family: var(--chinese); font-size: 13px; font-weight: 500; 
 .footer-links { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-.terminal-section { --terminal-font: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace; margin-top: 36px; font-family: var(--terminal-font), var(--chinese); font-size: 14px; line-height: 1.65; font-variant-ligatures: none; }
-.terminal-section[data-font="maple"] { --terminal-font: "Maple Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
-.terminal-section[data-font="system"] { --terminal-font: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
-.terminal-section[data-style="italic"] { font-style: italic; }
-.terminal-section[data-weight="bold"] { font-weight: 700; }
+[data-font-scope] { --terminal-font: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-family: var(--terminal-font), var(--chinese); font-variant-ligatures: none; }
+[data-font-scope][data-font="maple"] { --terminal-font: "Maple Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+[data-font-scope][data-font="system"] { --terminal-font: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+[data-font-scope][data-style="italic"] { font-style: italic; }
+[data-font-scope][data-weight="bold"] { font-weight: 700; }
+.terminal-section { margin-top: 36px; font-size: 14px; line-height: 1.65; }
 .terminal-buffer { height: clamp(260px, 42svh, 420px); overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .terminal-line { margin: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
 .terminal-command { color: var(--accent); }
@@ -231,7 +232,7 @@ h2 { margin: 0; font-family: var(--chinese); font-size: 13px; font-weight: 500; 
   .page { width: calc(100% - 44px); }
   .site-header { padding-block: 20px; }
   nav { gap: 18px; font-size: 12px; }
-  main { padding-block: 52px 64px; }
+  main { padding-block: 24px 64px; }
   h1 { letter-spacing: -3px; }
   .description { font-size: 16px; letter-spacing: 0.02em; }
   .elsewhere { margin-top: 60px; }

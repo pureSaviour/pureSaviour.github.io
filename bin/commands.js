@@ -21,7 +21,7 @@
     date: "date                   Print the local date and time",
     clear: "clear                  Clear the screen; keep command history",
     history: "history                List this session's last 100 commands",
-    font: "font [family] [style...]\n  Families: jetbrains, maple, system\n  Styles:   normal, bold, italic (also --normal, --bold, --italic)\n  normal resets weight and slant; bold and italic can be combined.\n  --help    Show this help without changing the font\n\n  font jetbrains bold italic\n  font --normal\n  font --help"
+    font: "font [family] [style...]\n  Applies to the terminal and the greeting code.\n  Families: jetbrains, maple, system\n  Styles:   normal, bold, italic (also --normal, --bold, --italic)\n  normal resets weight and slant; bold and italic can be combined.\n  --help    Show this help without changing the font\n\n  font jetbrains bold italic\n  font --normal\n  font --help"
   };
 
   const EXECUTABLES = Object.freeze(Object.fromEntries(COMMANDS.map((name) => ["/bin/" + name, name])));
@@ -92,7 +92,7 @@
     let cwd = HOME, previous = HOME, font = "jetbrains", fontStyle = "normal", fontWeight = 400;
     const history = [];
     function resolveCommand(word) {
-      const path = word.includes("/") ? normalizePath(word, cwd) : "/bin/" + word;
+      const path = word.startsWith("bin/") ? normalizePath("/" + word, cwd) : word.includes("/") ? normalizePath(word, cwd) : "/bin/" + word;
       return Object.hasOwn(EXECUTABLES, path) ? EXECUTABLES[path] : null;
     }
     function requireDirectory(path) {
@@ -101,6 +101,11 @@
     }
     function noArguments(args) {
       if (args.length) throw new Error("This command takes no arguments.");
+    }
+    function changeDirectory(target) {
+      requireDirectory(target);
+      previous = cwd;
+      cwd = target;
     }
     function execute(line) {
       if (!line.trim()) return { output: "" };
@@ -111,6 +116,12 @@
         const [word, ...args] = tokenize(line).map((token) => token.value);
         const command = resolveCommand(word);
         if (!command) {
+          const directory = word === "bin" || word.startsWith("bin/") ? normalizePath("/" + word, cwd) : normalizePath(word, cwd);
+          if (isDirectory(directory)) {
+            noArguments(args);
+            changeDirectory(directory);
+            return { output: "" };
+          }
           if (word.includes("/")) {
             const path = normalizePath(word, cwd);
             throw new Error((isDirectory(path) ? "Is a directory: " : exists(path) ? "Permission denied: " : "No such executable: ") + word);
@@ -122,7 +133,7 @@
           case "help": {
             if (args.length > 1) throw new Error("Usage: help [command]");
             if (args.length && !Object.hasOwn(HELP, args[0])) throw new Error("No help available for: " + args[0]);
-            return { output: args.length ? HELP[args[0]] : Object.values(HELP).join("\n") + "\n\nPATH = /bin; ~ = /home/knight. Virtual filesystem; no variable expansion or script execution." };
+            return { output: args.length ? HELP[args[0]] : Object.values(HELP).join("\n") + "\n\nPATH = /bin; ~ = /home/knight. Type bin to enter /bin, then ls to list executables.\nDirectory paths also change the working directory. Virtual filesystem; no variable expansion or script execution." };
           }
           case "ls":
           case "dir": {
@@ -148,9 +159,7 @@
           case "cd": {
             if (args.length > 1) throw new Error("Usage: cd [directory]");
             const target = args[0] === "-" ? previous : normalizePath(args[0] || HOME, cwd);
-            requireDirectory(target);
-            previous = cwd;
-            cwd = target;
+            changeDirectory(target);
             return { output: args[0] === "-" ? cwd : "" };
           }
           case "cat": {
@@ -219,14 +228,14 @@
       } catch { /* 补全只取光标之前的有效输入。 */ }
       let matches = [];
       const command = resolveCommand(tokens[0].value);
-      if (tokens.length === 1 && !token.value.includes("/")) matches = COMMANDS.filter((name) => name.startsWith(token.value));
+      if (tokens.length === 1 && !token.value.includes("/")) matches = [...COMMANDS, "bin/"].filter((name) => name.startsWith(token.value));
       else if (tokens.length > 1 && command === "help") matches = COMMANDS.filter((name) => name.startsWith(token.value));
       else if (tokens.length > 1 && command === "font") matches = [...Object.keys(FONTS), "normal", "bold", "italic", "--normal", "--bold", "--italic", "--help"].filter((name) => name.startsWith(token.value));
       else if (tokens.length === 1 || ["ls", "dir", "tree", "cd", "cat"].includes(command)) {
         const split = token.value.lastIndexOf("/") + 1;
         const base = token.value.slice(0, split);
         const name = token.value.slice(split);
-        const directory = normalizePath(base || ".", cwd);
+        const directory = normalizePath(tokens.length === 1 && base.startsWith("bin/") ? "/" + base : base || ".", cwd);
         if (isDirectory(directory)) matches = children(directory)
           .filter((entry) => entry.name.startsWith(name) && (!["cd", "tree"].includes(command) || entry.directory) && (tokens.length > 1 || entry.directory || Object.hasOwn(EXECUTABLES, entry.path)))
           .map((entry) => base + entry.name + (entry.directory ? "/" : ""));

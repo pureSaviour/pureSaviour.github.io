@@ -34,9 +34,9 @@ Enter 执行、↑↓ 翻历史、Tab 补全、Ctrl + L 清屏；Shift + Tab 可
 
 默认字体为自托管 JetBrains Mono，无需访客预先安装。`font maple`、`font system` 和 `font jetbrains` 可切换字体，`font` 查看当前字体；选择仅在本次页面会话内保留。`font bold` / `font --bold` 设置粗体，`font italic` / `font --italic` 设置斜体，两者可组合；`font normal` / `font --normal` 同时恢复普通字重和正体，保留当前字体家族。`font --help` 查看完整用法，不改变设置。
 
-命令实现集中在项目 `bin/commands.js` 中；虚拟 `/bin` 下为每个命令提供可执行入口。`ls /bin`、`ls -l /bin`、`tree /bin` 可查看，`/bin/font --help` 或在 `/bin` 中执行 `./font` 均可用。裸命令名按虚拟 `PATH=/bin` 查找，命令与参数都支持路径补全。
+命令实现集中在项目 `bin/commands.js` 中；虚拟 `/bin` 下为每个命令提供可执行入口。直接输入 `bin`（或 `bin/`、`/bin`）进入该目录，输入 `ls` 查看全部命令，再输入 `font`、`./font` 等执行对应入口。`ls /bin`、`ls -l /bin`、`tree /bin` 也可查看，`/bin/font --help` 和 `bin/font --help` 可直接调用。裸命令名按虚拟 `PATH=/bin` 查找，命令与参数都支持路径补全；目录路径支持直接切换目录。执行入口映射到 JavaScript 命令实现，无需生成真实可执行文件。
 
-主页顶部静态展示 C、C++、C# 和 Python 的 Hello World 输出语句，分别为函数、命名空间、字符串和运算符着色；无高亮库依赖，禁用 JavaScript 仍可见。
+主页顶部静态展示 C、C++、C# 和 Python 的 Hello World 输出语句，分别为函数、命名空间、字符串和运算符着色；无高亮库依赖，禁用 JavaScript 仍可见。`font` 同时改变终端和这四行代码的字体家族、字重及斜体，高亮配色保留。
 
 运行命令逻辑检查：
 

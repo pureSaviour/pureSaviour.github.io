@@ -9,6 +9,7 @@
   const prompt = terminal.querySelector("[data-terminal-prompt]");
   const mirror = terminal.querySelector("[data-terminal-mirror]");
   const shell = window.KnightTerminal.createShell();
+  const fontScopes = document.querySelectorAll("[data-font-scope]");
   const segmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
   let historyIndex = 0, draft = "", composing = false;
 
@@ -51,9 +52,11 @@
       if (result.output) write(result.output.replace(/\n$/, ""), result.error ? "terminal-error" : "");
     }
     if (result.font) {
-      terminal.dataset.font = result.font;
-      terminal.dataset.style = result.fontStyle;
-      terminal.dataset.weight = result.fontWeight === 700 ? "bold" : "normal";
+      for (const scope of fontScopes) {
+        scope.dataset.font = result.font;
+        scope.dataset.style = result.fontStyle;
+        scope.dataset.weight = result.fontWeight === 700 ? "bold" : "normal";
+      }
     }
     setInput("");
     historyIndex = shell.history.length;

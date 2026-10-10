@@ -129,12 +129,33 @@ test("exposes every command as an executable in /bin with path-based invocation"
   assert.equal(shell.execute("../bin/pwd").output, "/bin");
   assert.equal(shell.execute("echo from PATH").output, "from PATH");
   assert.equal(shell.execute("/bin/missing").error, true);
-  assert.equal(shell.execute("/bin").error, true);
+  assert.equal(shell.execute("/bin").error, undefined);
   assert.match(shell.execute("/home/knight/about.txt").output, /Permission denied/);
   assert.equal(shell.complete("./fo").line, "./font ");
   assert.equal(shell.complete("/bin/fo").line, "/bin/font ");
   assert.equal(shell.complete("/bin/font --i").line, "/bin/font --italic ");
   assert.equal(shell.complete("cd /b").line, "cd /bin/");
+});
+
+test("enters bin directly and invokes its executable entries", () => {
+  const shell = createShell();
+  assert.equal(shell.complete("bi").line, "bin/");
+  assert.equal(shell.complete("bin/fo").line, "bin/font ");
+  assert.equal(shell.execute("bin/echo from home").output, "from home");
+  assert.equal(shell.execute("bin extra").error, true);
+  assert.equal(shell.cwd, "/home/knight");
+  assert.equal(shell.execute("bin").output, "");
+  assert.equal(shell.cwd, "/bin");
+  assert.equal(shell.promptPath, "/bin");
+  assert.match(shell.execute("ls").output, /echo.*font/);
+  assert.equal(shell.execute("./echo executable").output, "executable");
+  assert.equal(shell.execute("font bold").fontWeight, 700);
+  assert.equal(shell.execute("cd -").output, "/home/knight");
+  assert.equal(shell.execute("bin/").error, undefined);
+  assert.equal(shell.cwd, "/bin");
+  shell.execute("/home/knight");
+  assert.equal(shell.cwd, "/home/knight");
+  assert.equal(shell.execute("about.txt").error, true);
 });
 
 test("font styles combine, reset, validate atomically and support --help", () => {
