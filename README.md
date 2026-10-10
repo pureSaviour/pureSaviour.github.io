@@ -2,6 +2,8 @@
 
 Knight 的个人主页：记录学习、实践与思考。
 
+[访问主页](https://puresaviour.github.io/) · [隐私政策](https://puresaviour.github.io/privacy.html)
+
 纯 HTML + CSS，无 JavaScript、无构建步骤。项目和笔记有真实素材后再添加。
 
 ## 本地预览
