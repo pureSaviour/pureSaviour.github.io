@@ -8,3 +8,15 @@
 - 本地文件：`maple-mono.woff2`，原文件仅重命名，未修改字形。
 - SHA-256：`E7080EF37FA8B3A38F71446E53E546634C27CE2CFE97673478CAFC029D6344EE`。
 - 许可证：SIL Open Font License 1.1，全文见 `OFL.txt`。
+
+
+# JetBrains Mono
+
+- 官方项目：https://github.com/JetBrains/JetBrainsMono。
+- 字体来源：https://raw.githubusercontent.com/JetBrains/JetBrainsMono/v2.304/fonts/webfonts/JetBrainsMono-Regular.woff2。
+- 授权来源：https://raw.githubusercontent.com/JetBrains/JetBrainsMono/v2.304/OFL.txt。
+- 获取日期：2026-10-10；版本：2.304，Regular。
+- 本地文件：`jetbrains-mono.woff2`，仅重命名，未修改字形。
+- SHA-256：`A9CB1CD82332B23A47E3A1239D25D13C86D16C4220695E34B243EFFA999F45F2`。
+- 许可证：SIL Open Font License 1.1，全文见 `JetBrainsMono-OFL.txt`。
+- 终端默认使用此自托管 WOFF2；设备无需预装字体。加载失败时回退系统等宽字体，中文使用系统回退。

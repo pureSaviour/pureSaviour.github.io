@@ -8,7 +8,7 @@ test("browses the same virtual files with ls, dir, cat and tree", () => {
   assert.equal(shell.execute("ls").output, "about.txt  links.txt");
   assert.equal(shell.execute("dir").output, shell.execute("ls").output);
   assert.match(shell.execute("ls -al").output, /dr-xr-xr-x  \.\//);
-  assert.match(shell.execute("cat about.txt links.txt").output, /Knight\n记录学习、实践与思考。\nGitHub  https:\/\/github.com\/pureSaviour/);
+  assert.match(shell.execute("cat about.txt links.txt").output, /Knight\nLearning, building, and staying curious.\nGitHub  https:\/\/github.com\/pureSaviour/);
   assert.equal(shell.execute("tree").output, ".\n├── about.txt\n└── links.txt");
   assert.match(shell.execute("tree /").output, /home\/\n    └── knight\//);
 });
@@ -17,7 +17,7 @@ test("normalizes paths, home and previous directory without moving after errors"
   const shell = createShell();
   shell.execute("cd ..");
   assert.equal(shell.cwd, "/home");
-  assert.equal(shell.execute("cat knight/./about.txt").output, "Knight\n记录学习、实践与思考。\n");
+  assert.equal(shell.execute("cat knight/./about.txt").output, "Knight\nLearning, building, and staying curious.\n");
   shell.execute("cd /");
   shell.execute("cd ../../../../");
   assert.equal(shell.cwd, "/");
@@ -38,7 +38,7 @@ test("parses quoted and escaped arguments as text", () => {
   assert.equal(shell.execute("echo '' \"\"").output, " ");
   assert.equal(shell.execute('echo "<img src=x onerror=alert(1)>"').output, "<img src=x onerror=alert(1)>");
   assert.equal(shell.execute('echo "$USER | $(whoami)"').output, "$USER | $(whoami)");
-  assert.equal(shell.execute("cat 'about.txt'").output, "Knight\n记录学习、实践与思考。\n");
+  assert.equal(shell.execute("cat 'about.txt'").output, "Knight\nLearning, building, and staying curious.\n");
   assert.equal(shell.execute("echo -n hello").output, "hello");
 });
 
@@ -57,7 +57,7 @@ test("supports specific help, identity and the injected current time", () => {
   assert.equal(shell.execute("help cat").output, shell.execute("cat --help").output);
   assert.match(shell.execute("help").output, /history/);
   assert.equal(shell.execute("whoami").output, "Knight");
-  assert.equal(shell.execute("date").output, now.toLocaleString("zh-CN", { hour12: false }));
+  assert.equal(shell.execute("date").output, now.toLocaleString("en-GB", { hour12: false }));
 });
 
 test("history is bounded, contains errors and survives clear, but not a new session", () => {
@@ -93,4 +93,21 @@ test("completes commands, relative and absolute paths, quoted names and cursor p
   assert.equal(shell.complete("ls | ca").matches.length, 0);
   shell.execute("cd /");
   assert.equal(shell.complete("cat home/kn").line, "cat home/knight/");
+});
+
+
+test("uses English for built-in output and changes fonts only within a session", () => {
+  const shell = createShell();
+  for (const command of ["help", "help cat", "cat about.txt links.txt", "date", "missing", "cat /", "cd missing", "ls -z", "echo 'unfinished", "ls | cat", "pwd extra", "font missing"]) {
+    assert.doesNotMatch(shell.execute(command).output, /[\u3400-\u9fff]/, command);
+  }
+  assert.deepEqual(shell.execute("font"), { output: "Font: JetBrains Mono", font: "jetbrains" });
+  assert.equal(shell.execute("font maple").font, "maple");
+  assert.equal(shell.execute("font system").font, "system");
+  assert.equal(shell.execute("font __proto__").error, true);
+  assert.equal(shell.execute("font").font, "system");
+  assert.equal(shell.execute("font maple extra").error, true);
+  assert.equal(shell.complete("font j").line, "font jetbrains ");
+  assert.equal(shell.complete("font s").line, "font system ");
+  assert.equal(createShell().execute("font").font, "jetbrains");
 });

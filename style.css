@@ -6,6 +6,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/jetbrains-mono.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
   --paper: #faf9f6;
@@ -147,24 +155,25 @@ h2 { margin: 0; font-family: var(--chinese); font-size: 13px; font-weight: 500; 
 .footer-links { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-.terminal-section { margin-top: 56px; }
-.terminal-heading { margin-bottom: 16px; }
-.terminal-window { border: 1px solid var(--line); border-radius: 8px; background: #f5f5ef; overflow: hidden; }
-.terminal-bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; }
-.terminal-label { color: var(--accent); }
-.terminal-log { min-height: 116px; max-height: 310px; overflow: auto; padding: 18px 18px 4px; overscroll-behavior: contain; scrollbar-width: thin; }
-.terminal-line { margin: 0 0 12px; font-family: var(--mono), var(--chinese); font-size: 13px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; }
+.terminal-section { --terminal-font: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace; margin-top: 36px; font-family: var(--terminal-font), var(--chinese); font-size: 14px; line-height: 1.65; font-variant-ligatures: none; }
+.terminal-section[data-font="maple"] { --terminal-font: "Maple Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.terminal-section[data-font="system"] { --terminal-font: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.terminal-buffer { height: clamp(260px, 42svh, 420px); overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.terminal-line { margin: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
 .terminal-command { color: var(--accent); }
 .terminal-muted { color: var(--muted); }
 .terminal-error { color: #9a3e34; }
-.terminal-form { display: flex; align-items: baseline; gap: 10px; padding: 12px 18px 18px; font-family: var(--mono), var(--chinese); font-size: 13px; }
+.terminal-form { display: flex; align-items: baseline; gap: 1ch; margin: 0; padding: 0; }
 .terminal-prompt { flex-shrink: 0; color: var(--accent); white-space: nowrap; }
-.terminal-form input { flex: 1; width: 0; min-width: 0; padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: var(--ink); caret-color: var(--accent); font: inherit; line-height: 1.5; }
-.terminal-form input::placeholder { color: var(--muted); opacity: 1; }
-.terminal-form input:focus-visible { outline: none; box-shadow: 0 1px var(--accent); }
-.terminal-log:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
-.terminal-hint, .terminal-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.8; }
-.terminal-note { margin-top: 4px; font-family: var(--chinese); }
+.terminal-editor { position: relative; flex: 1; min-width: 0; }
+.terminal-mirror, .terminal-editor textarea { margin: 0; padding: 0; border: 0; border-radius: 0; font: inherit; letter-spacing: 0; line-height: inherit; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 4; }
+.terminal-mirror { min-height: 1.65em; pointer-events: none; }
+.terminal-editor textarea { position: absolute; inset: 0; width: 100%; height: 100%; resize: none; overflow: hidden; background: transparent; color: transparent; -webkit-text-fill-color: transparent; caret-color: transparent; outline: none; box-shadow: none; }
+.terminal-editor textarea::selection { background: transparent; color: transparent; }
+.terminal-caret { display: inline; background: var(--accent); color: var(--paper); }
+.terminal-editor:not(:focus-within) .terminal-caret { background: transparent; color: inherit; box-shadow: inset 0 0 0 1px var(--accent); }
+.terminal-selection { background: #dce5d8; }
+.terminal-log:focus-visible { outline: 1px dotted var(--accent); outline-offset: 2px; }
 
 .policy { padding-block: 48px 72px; font-family: var(--chinese); }
 .policy .eyebrow { font-family: var(--mono), monospace; }
@@ -189,10 +198,6 @@ h2 { margin: 0; font-family: var(--chinese); font-size: 13px; font-weight: 500; 
   .profile-handle { font-size: 12px; }
   .site-footer { padding-block: 16px; gap: 12px; }
   .footer-links { gap: 14px; }
-  .terminal-section { margin-top: 44px; }
-  .terminal-bar { padding-inline: 14px; }
-  .terminal-log { padding-inline: 14px; }
-  .terminal-form { padding-inline: 14px; gap: 8px; }
-  .terminal-form input { font-size: 16px; }
+  .terminal-section { margin-top: 32px; font-size: 16px; }
   .policy { padding-block: 32px 48px; font-size: 15px; }
 }

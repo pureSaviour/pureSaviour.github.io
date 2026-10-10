@@ -6,20 +6,22 @@
   "use strict";
 
   const HOME = "/home/knight";
-  const COMMANDS = ["help", "ls", "dir", "tree", "pwd", "cd", "cat", "echo", "whoami", "date", "clear", "history"];
+  const COMMANDS = ["help", "ls", "dir", "tree", "pwd", "cd", "cat", "echo", "whoami", "date", "clear", "history", "font"];
+  const FONTS = Object.freeze({ jetbrains: "JetBrains Mono", maple: "Maple Mono", system: "System monospace" });
   const HELP = {
-    help: "help                  查看命令说明；help <命令> 查看用法",
-    ls: "ls [-a] [-l] [路径]    列出目录；-a 显示 . 和 ..，-l 显示简要信息",
-    dir: "dir [-a] [-l] [路径]   ls 的别名",
-    tree: "tree [目录]           查看目录树",
-    pwd: "pwd                   显示当前目录",
-    cd: "cd [目录]             切换目录；省略回到 ~，cd - 返回上一目录",
-    cat: "cat <文件> [...]      读取文本文件",
-    echo: "echo [-n] [文字...]    输出文字；支持单引号、双引号与反斜杠转义",
-    whoami: "whoami                显示 Knight",
-    date: "date                  显示浏览器当前日期时间",
-    clear: "clear                 清空屏幕，保留本次历史",
-    history: "history               查看本次输入记录（最多 100 条）"
+    help: "help [command]         List commands or show command usage",
+    ls: "ls [-a] [-l] [path]     List entries; -a includes . and ..; -l shows permissions",
+    dir: "dir [-a] [-l] [path]    Alias for ls",
+    tree: "tree [directory]       Show the directory tree",
+    pwd: "pwd                    Print the working directory",
+    cd: "cd [directory]         Change directory; no argument goes home; - goes back",
+    cat: "cat <file> [...]       Print text files",
+    echo: "echo [-n] [text...]     Print text; quotes and backslash escapes are supported",
+    whoami: "whoami                 Print the current user",
+    date: "date                   Print the local date and time",
+    clear: "clear                  Clear the screen; keep command history",
+    history: "history                List this session's last 100 commands",
+    font: "font [name]            Show or set font: jetbrains, maple, system"
   };
 
   // 仅是个人主页的虚拟内容，与服务器或访客设备的文件无关。
@@ -27,8 +29,8 @@
     "/": null,
     "/home": null,
     "/home/knight": null,
-    "/home/knight/about.txt": "Knight\n记录学习、实践与思考。\n",
-    "/home/knight/links.txt": "GitHub  https://github.com/pureSaviour\n主页    https://puresaviour.github.io/\n"
+    "/home/knight/about.txt": "Knight\nLearning, building, and staying curious.\n",
+    "/home/knight/links.txt": "GitHub  https://github.com/pureSaviour\nHome    https://puresaviour.github.io/\n"
   });
 
   function tokenize(line, partial = false) {
@@ -53,11 +55,11 @@
       if (char === "'" || char === '"') { quote = char; continue; }
       if (/\s/.test(char)) { finish(i); continue; }
       if (/[|;&<>`]/.test(char) || (char === "$" && line[i + 1] === "(")) {
-        throw new Error("暂不支持管道、重定向或脚本语法。文字中的特殊符号请放在引号内。");
+        throw new Error("Pipes, redirection and scripts are not supported. Quote special characters to print them.");
       }
       value += char;
     }
-    if (!partial && (quote || escaped)) throw new Error(quote ? "引号尚未闭合。" : "反斜杠后缺少字符。");
+    if (!partial && (quote || escaped)) throw new Error(quote ? "Unclosed quote." : "Missing character after backslash.");
     finish(line.length);
     return tokens;
   }
@@ -83,29 +85,29 @@
   }
 
   function createShell({ now = () => new Date() } = {}) {
-    let cwd = HOME, previous = HOME;
+    let cwd = HOME, previous = HOME, font = "jetbrains";
     const history = [];
     function requireDirectory(path) {
-      if (!exists(path)) throw new Error("没有这个目录：" + path);
-      if (!isDirectory(path)) throw new Error("不是目录：" + path);
+      if (!exists(path)) throw new Error("No such directory: " + path);
+      if (!isDirectory(path)) throw new Error("Not a directory: " + path);
     }
     function noArguments(args) {
-      if (args.length) throw new Error("该命令不接受参数。输入 help <命令> 查看用法。");
+      if (args.length) throw new Error("This command takes no arguments.");
     }
     function execute(line) {
       if (!line.trim()) return { output: "" };
-      if (line.length > 2048) return { output: "命令过长，请控制在 2048 个字符内。", error: true };
+      if (line.length > 2048) return { output: "Command exceeds the 2048-character limit.", error: true };
       history.push(line);
       if (history.length > 100) history.shift();
       try {
         const [command, ...args] = tokenize(line).map((token) => token.value);
-        if (!COMMANDS.includes(command)) throw new Error("找不到命令：" + command + "。输入 help 查看支持的命令。");
+        if (!COMMANDS.includes(command)) throw new Error("Command not found: " + command);
         if (args.length === 1 && args[0] === "--help") return { output: HELP[command] };
         switch (command) {
           case "help": {
-            if (args.length > 1) throw new Error("用法：help [命令]");
-            if (args.length && !Object.hasOwn(HELP, args[0])) throw new Error("没有这个命令的说明：" + args[0]);
-            return { output: args.length ? HELP[args[0]] : Object.values(HELP).join("\n") + "\n\n~ = /home/knight。仅支持上述命令，不展开变量，不执行脚本。" };
+            if (args.length > 1) throw new Error("Usage: help [command]");
+            if (args.length && !Object.hasOwn(HELP, args[0])) throw new Error("No help available for: " + args[0]);
+            return { output: args.length ? HELP[args[0]] : Object.values(HELP).join("\n") + "\n\n~ = /home/knight. Virtual filesystem; no variable expansion or script execution." };
           }
           case "ls":
           case "dir": {
@@ -115,21 +117,21 @@
             for (const arg of args) {
               if (options && arg === "--") { options = false; continue; }
               if (options && arg.startsWith("-") && arg !== "-") {
-                if (!/^-[al]+$/.test(arg)) throw new Error("不支持的选项：" + arg + "。可用 -a、-l。");
+                if (!/^-[al]+$/.test(arg)) throw new Error("Unsupported option: " + arg + ". Available options: -a, -l.");
                 all ||= arg.includes("a");
                 long ||= arg.includes("l");
               } else paths.push(arg);
             }
-            if (paths.length > 1) throw new Error("用法：" + command + " [-a] [-l] [路径]");
+            if (paths.length > 1) throw new Error("Usage: " + command + " [-a] [-l] [path]");
             const path = normalizePath(paths[0] || ".", cwd);
-            if (!exists(path)) throw new Error("没有这个文件或目录：" + path);
+            if (!exists(path)) throw new Error("No such file or directory: " + path);
             let entries = isDirectory(path) ? children(path) : [{ name: path.split("/").pop(), path, directory: false }];
             if (all && isDirectory(path)) entries = [{ name: ".", path, directory: true }, { name: "..", path: normalizePath("..", path), directory: true }, ...entries];
             return { output: long ? entries.map((entry) => (entry.directory ? "dr-xr-xr-x" : "-r--r--r--") + "  " + entry.name + (entry.directory ? "/" : "")).join("\n") : entries.map((entry) => entry.name + (entry.directory ? "/" : "")).join("  ") };
           }
           case "pwd": noArguments(args); return { output: cwd };
           case "cd": {
-            if (args.length > 1) throw new Error("用法：cd [目录]");
+            if (args.length > 1) throw new Error("Usage: cd [directory]");
             const target = args[0] === "-" ? previous : normalizePath(args[0] || HOME, cwd);
             requireDirectory(target);
             previous = cwd;
@@ -137,16 +139,16 @@
             return { output: args[0] === "-" ? cwd : "" };
           }
           case "cat": {
-            if (!args.length) throw new Error("用法：cat <文件> [...]");
+            if (!args.length) throw new Error("Usage: cat <file> [...]");
             return { output: args.map((arg) => {
               const path = normalizePath(arg, cwd);
-              if (!exists(path)) throw new Error("没有这个文件：" + path);
-              if (isDirectory(path)) throw new Error("这是目录：" + path);
+              if (!exists(path)) throw new Error("No such file: " + path);
+              if (isDirectory(path)) throw new Error("Is a directory: " + path);
               return FILES[path];
             }).join("") };
           }
           case "tree": {
-            if (args.length > 1) throw new Error("用法：tree [目录]");
+            if (args.length > 1) throw new Error("Usage: tree [directory]");
             const path = normalizePath(args[0] || ".", cwd);
             requireDirectory(path);
             const lines = [args[0] || "."];
@@ -163,7 +165,13 @@
           }
           case "echo": return { output: (args[0] === "-n" ? args.slice(1) : args).join(" ") };
           case "whoami": noArguments(args); return { output: "Knight" };
-          case "date": noArguments(args); return { output: now().toLocaleString("zh-CN", { hour12: false }) };
+          case "date": noArguments(args); return { output: now().toLocaleString("en-GB", { hour12: false }) };
+          case "font": {
+            if (args.length > 1) throw new Error("Usage: font [jetbrains|maple|system]");
+            if (args.length && !Object.hasOwn(FONTS, args[0])) throw new Error("Unknown font: " + args[0] + ". Available fonts: jetbrains, maple, system.");
+            if (args.length) font = args[0];
+            return { output: "Font: " + FONTS[font], font };
+          }
           case "clear": noArguments(args); return { output: "", clear: true };
           case "history": noArguments(args); return { output: history.map((entry, index) => String(index + 1).padStart(3) + "  " + entry).join("\n") };
         }
@@ -184,6 +192,7 @@
       let matches = [];
       if (tokens.length === 1) matches = COMMANDS.filter((command) => command.startsWith(token.value));
       else if (tokens[0].value === "help") matches = COMMANDS.filter((command) => command.startsWith(token.value));
+      else if (tokens[0].value === "font") matches = Object.keys(FONTS).filter((name) => name.startsWith(token.value));
       else if (["ls", "dir", "tree", "cd", "cat"].includes(tokens[0].value)) {
         const split = token.value.lastIndexOf("/") + 1;
         const base = token.value.slice(0, split);

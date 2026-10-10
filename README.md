@@ -28,9 +28,11 @@ python -m http.server 4173 --bind 127.0.0.1
 
 ## 模拟终端
 
-首页默认展开。支持 `help`、`ls` / `dir`、`tree`、`pwd`、`cd`、`cat`、`echo`、`whoami`、`date`、`clear` 和 `history`。输入 `help <命令>` 或 `<命令> --help` 查看用法。初始目录为 `/home/knight`，包含 `about.txt` 与 `links.txt`。
+首页默认展开，终端与页面融为一体，没有边框、输入下划线、标题或操作提示。输入行位于共享滚动缓冲区中的最新输出之后，使用块状光标；帮助、错误与内置文本均为英文。支持 `help`、`ls` / `dir`、`tree`、`pwd`、`cd`、`cat`、`echo`、`whoami`、`date`、`clear`、`history` 和 `font`。输入 `help <命令>` 或 `<命令> --help` 查看用法。初始目录为 `/home/knight`，包含 `about.txt` 与 `links.txt`。
 
 Enter 执行、↑↓ 翻历史、Tab 补全、Ctrl + L 清屏；Shift + Tab 可离开输入框。不支持管道、重定向、变量展开或脚本。虚拟内容与终端状态只存在于浏览器内存中，刷新清空，不发送命令请求、不访问真实文件系统。
+
+默认字体为自托管 JetBrains Mono，无需访客预先安装。`font maple`、`font system` 和 `font jetbrains` 可切换字体，`font` 查看当前字体；选择仅在本次页面会话内保留。
 
 运行命令逻辑检查：
 
@@ -50,4 +52,4 @@ node tests/terminal.test.cjs
 
 ## 字体
 
-自托管 [Maple Mono](https://github.com/subframe7536/maple-font) 的可变 WOFF2 字体，中文使用访问者系统的中文字体。字体采用 SIL Open Font License 1.1；授权文件见 `assets/fonts/OFL.txt`，来源记录见 `assets/fonts/README.md`。
+终端自托管 [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) Regular WOFF2，主页自托管 [Maple Mono](https://github.com/subframe7536/maple-font) 的可变 WOFF2 字体，中文使用访问者系统的中文字体。字体采用 SIL Open Font License 1.1；授权文件见 `assets/fonts/JetBrainsMono-OFL.txt` 与 `assets/fonts/OFL.txt`，来源记录见 `assets/fonts/README.md`。
