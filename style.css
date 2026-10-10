@@ -14,6 +14,38 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/jetbrains-mono-bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/jetbrains-mono-italic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/jetbrains-mono-bolditalic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Maple Mono";
+  src: url("./assets/fonts/maple-mono-italic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
   --paper: #faf9f6;
@@ -96,7 +128,15 @@ main { padding-block: 75px 88px; }
   color: var(--muted);
 }
 
-.comment { margin-right: 8px; color: var(--accent); }
+.hello-code { margin-bottom: 28px; font-size: 13px; line-height: 1.9; }
+.hello-row { display: grid; grid-template-columns: 6ch minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.hello-language { color: var(--muted); font-size: 11px; }
+.hello-row code { min-width: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+.code-function { color: #25636e; }
+.code-namespace, .code-type { color: #725394; }
+.code-variable { color: var(--ink); }
+.code-string { color: #9b4e2c; white-space: pre; }
+.code-operator, .code-punctuation { color: #6d6a64; }
 
 h1 {
   margin: 0;
@@ -158,6 +198,8 @@ h2 { margin: 0; font-family: var(--chinese); font-size: 13px; font-weight: 500; 
 .terminal-section { --terminal-font: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace; margin-top: 36px; font-family: var(--terminal-font), var(--chinese); font-size: 14px; line-height: 1.65; font-variant-ligatures: none; }
 .terminal-section[data-font="maple"] { --terminal-font: "Maple Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
 .terminal-section[data-font="system"] { --terminal-font: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.terminal-section[data-style="italic"] { font-style: italic; }
+.terminal-section[data-weight="bold"] { font-weight: 700; }
 .terminal-buffer { height: clamp(260px, 42svh, 420px); overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .terminal-line { margin: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
 .terminal-command { color: var(--accent); }

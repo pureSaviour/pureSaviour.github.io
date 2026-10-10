@@ -21,7 +21,7 @@ python -m http.server 4173 --bind 127.0.0.1
 - `index.html`：展示名、简介、导航与对外链接。
 - `privacy.html`：隐私政策；网站数据处理发生变化时同步更新。
 - `style.css`：字体、颜色、间距和手机布局。
-- `terminal-core.js`：虚拟目录、命令处理与补全；在 `FILES` 中维护虚拟文件。
+- `bin/commands.js`：虚拟目录、命令处理与补全；在 `FILES` 中维护虚拟文件。
 - `terminal.js`：终端展示、输入与键盘交互。
 - `assets/favicon.svg`：浏览器标签图标。
 - `docs/design-brief.md`：已确认的设计约定。
@@ -32,7 +32,11 @@ python -m http.server 4173 --bind 127.0.0.1
 
 Enter 执行、↑↓ 翻历史、Tab 补全、Ctrl + L 清屏；Shift + Tab 可离开输入框。不支持管道、重定向、变量展开或脚本。虚拟内容与终端状态只存在于浏览器内存中，刷新清空，不发送命令请求、不访问真实文件系统。
 
-默认字体为自托管 JetBrains Mono，无需访客预先安装。`font maple`、`font system` 和 `font jetbrains` 可切换字体，`font` 查看当前字体；选择仅在本次页面会话内保留。
+默认字体为自托管 JetBrains Mono，无需访客预先安装。`font maple`、`font system` 和 `font jetbrains` 可切换字体，`font` 查看当前字体；选择仅在本次页面会话内保留。`font bold` / `font --bold` 设置粗体，`font italic` / `font --italic` 设置斜体，两者可组合；`font normal` / `font --normal` 同时恢复普通字重和正体，保留当前字体家族。`font --help` 查看完整用法，不改变设置。
+
+命令实现集中在项目 `bin/commands.js` 中；虚拟 `/bin` 下为每个命令提供可执行入口。`ls /bin`、`ls -l /bin`、`tree /bin` 可查看，`/bin/font --help` 或在 `/bin` 中执行 `./font` 均可用。裸命令名按虚拟 `PATH=/bin` 查找，命令与参数都支持路径补全。
+
+主页顶部静态展示 C、C++、C# 和 Python 的 Hello World 输出语句，分别为函数、命名空间、字符串和运算符着色；无高亮库依赖，禁用 JavaScript 仍可见。
 
 运行命令逻辑检查：
 
@@ -52,4 +56,4 @@ node tests/terminal.test.cjs
 
 ## 字体
 
-终端自托管 [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) Regular WOFF2，主页自托管 [Maple Mono](https://github.com/subframe7536/maple-font) 的可变 WOFF2 字体，中文使用访问者系统的中文字体。字体采用 SIL Open Font License 1.1；授权文件见 `assets/fonts/JetBrainsMono-OFL.txt` 与 `assets/fonts/OFL.txt`，来源记录见 `assets/fonts/README.md`。
+终端自托管 [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) Regular、Bold、Italic、BoldItalic WOFF2，主页自托管 [Maple Mono](https://github.com/subframe7536/maple-font) 的正体与斜体可变 WOFF2 字体，中文使用访问者系统的中文字体。字体采用 SIL Open Font License 1.1；授权文件见 `assets/fonts/JetBrainsMono-OFL.txt` 与 `assets/fonts/OFL.txt`，来源记录见 `assets/fonts/README.md`。

@@ -50,7 +50,11 @@
       write(oldPrompt + (line ? " " + line : ""), "terminal-command");
       if (result.output) write(result.output.replace(/\n$/, ""), result.error ? "terminal-error" : "");
     }
-    if (result.font) terminal.dataset.font = result.font;
+    if (result.font) {
+      terminal.dataset.font = result.font;
+      terminal.dataset.style = result.fontStyle;
+      terminal.dataset.weight = result.fontWeight === 700 ? "bold" : "normal";
+    }
     setInput("");
     historyIndex = shell.history.length;
     draft = "";
@@ -102,6 +106,8 @@
     if (event.target !== buffer && event.target !== log) return;
     if (!window.getSelection().toString()) input.focus({ preventScroll: true });
   });
+  window.addEventListener("resize", () => { if (document.activeElement === input) revealInput(); });
+  document.fonts.addEventListener("loadingdone", () => { if (document.activeElement === input) revealInput(); });
   updatePrompt();
   renderInput();
   input.disabled = false;

@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { createShell } = require("../terminal-core.js");
+const { createShell } = require("../bin/commands.js");
 
 test("browses the same virtual files with ls, dir, cat and tree", () => {
   const shell = createShell();
@@ -101,7 +101,7 @@ test("uses English for built-in output and changes fonts only within a session",
   for (const command of ["help", "help cat", "cat about.txt links.txt", "date", "missing", "cat /", "cd missing", "ls -z", "echo 'unfinished", "ls | cat", "pwd extra", "font missing"]) {
     assert.doesNotMatch(shell.execute(command).output, /[\u3400-\u9fff]/, command);
   }
-  assert.deepEqual(shell.execute("font"), { output: "Font: JetBrains Mono", font: "jetbrains" });
+  assert.deepEqual(shell.execute("font"), { output: "Font: JetBrains Mono (normal)", font: "jetbrains", fontStyle: "normal", fontWeight: 400 });
   assert.equal(shell.execute("font maple").font, "maple");
   assert.equal(shell.execute("font system").font, "system");
   assert.equal(shell.execute("font __proto__").error, true);
@@ -110,4 +110,59 @@ test("uses English for built-in output and changes fonts only within a session",
   assert.equal(shell.complete("font j").line, "font jetbrains ");
   assert.equal(shell.complete("font s").line, "font system ");
   assert.equal(createShell().execute("font").font, "jetbrains");
+});
+
+
+test("exposes every command as an executable in /bin with path-based invocation", () => {
+  const names = ["help", "ls", "dir", "tree", "pwd", "cd", "cat", "echo", "whoami", "date", "clear", "history", "font"];
+  const shell = createShell();
+  assert.deepEqual(shell.execute("ls /bin").output.split("  "), names);
+  assert.equal(shell.execute("ls -l /bin").output.split("\n").length, names.length);
+  for (const name of names) {
+    assert.equal(shell.execute(`/bin/${name} --help`).output, shell.execute(`${name} --help`).output, name);
+    assert.match(shell.execute(`cat /bin/${name}`).output, new RegExp(`^Virtual command: ${name}\\n`));
+    assert.match(shell.execute(`ls -l /bin/${name}`).output, /^-r-xr-xr-x/);
+  }
+  assert.match(shell.execute("tree /bin").output, /font/);
+  shell.execute("cd /bin");
+  assert.equal(shell.execute("./echo hello").output, "hello");
+  assert.equal(shell.execute("../bin/pwd").output, "/bin");
+  assert.equal(shell.execute("echo from PATH").output, "from PATH");
+  assert.equal(shell.execute("/bin/missing").error, true);
+  assert.equal(shell.execute("/bin").error, true);
+  assert.match(shell.execute("/home/knight/about.txt").output, /Permission denied/);
+  assert.equal(shell.complete("./fo").line, "./font ");
+  assert.equal(shell.complete("/bin/fo").line, "/bin/font ");
+  assert.equal(shell.complete("/bin/font --i").line, "/bin/font --italic ");
+  assert.equal(shell.complete("cd /b").line, "cd /bin/");
+});
+
+test("font styles combine, reset, validate atomically and support --help", () => {
+  const shell = createShell();
+  assert.equal(shell.execute("font bold").fontWeight, 700);
+  assert.equal(shell.execute("font --italic").fontStyle, "italic");
+  assert.match(shell.execute("font").output, /bold italic/);
+  assert.deepEqual(shell.execute("font --normal"), { output: "Font: JetBrains Mono (normal)", font: "jetbrains", fontStyle: "normal", fontWeight: 400 });
+  const selected = shell.execute("font maple bold italic");
+  assert.equal(selected.font, "maple");
+  assert.equal(selected.fontStyle, "italic");
+  assert.equal(selected.fontWeight, 700);
+  const help = shell.execute("font --help");
+  assert.match(help.output, /--normal/);
+  assert.match(help.output, /--bold/);
+  assert.match(help.output, /--italic/);
+  assert.equal(help.font, undefined);
+  assert.equal(shell.execute("font system --help").output, help.output);
+  assert.deepEqual(shell.execute("font"), selected);
+  assert.equal(shell.execute("font system --normal unknown").error, true);
+  assert.deepEqual(shell.execute("font"), selected);
+  assert.equal(shell.execute("font system jetbrains").error, true);
+  assert.deepEqual(shell.execute("font"), selected);
+  assert.equal(shell.execute("font normal").fontStyle, "normal");
+  assert.equal(shell.execute("font").fontWeight, 400);
+  assert.equal(shell.execute("font").font, "maple");
+  assert.equal(shell.complete("font jetbrains b").line, "font jetbrains bold ");
+  assert.equal(shell.complete("font --h").line, "font --help ");
+  assert.equal(createShell().execute("font").fontWeight, 400);
+  assert.equal(createShell().execute("font").fontStyle, "normal");
 });

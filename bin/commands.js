@@ -21,12 +21,16 @@
     date: "date                   Print the local date and time",
     clear: "clear                  Clear the screen; keep command history",
     history: "history                List this session's last 100 commands",
-    font: "font [name]            Show or set font: jetbrains, maple, system"
+    font: "font [family] [style...]\n  Families: jetbrains, maple, system\n  Styles:   normal, bold, italic (also --normal, --bold, --italic)\n  normal resets weight and slant; bold and italic can be combined.\n  --help    Show this help without changing the font\n\n  font jetbrains bold italic\n  font --normal\n  font --help"
   };
+
+  const EXECUTABLES = Object.freeze(Object.fromEntries(COMMANDS.map((name) => ["/bin/" + name, name])));
 
   // 仅是个人主页的虚拟内容，与服务器或访客设备的文件无关。
   const FILES = Object.freeze({
     "/": null,
+    "/bin": null,
+    ...Object.fromEntries(COMMANDS.map((name) => ["/bin/" + name, "Virtual command: " + name + "\n" + HELP[name] + "\n"])),
     "/home": null,
     "/home/knight": null,
     "/home/knight/about.txt": "Knight\nLearning, building, and staying curious.\n",
@@ -85,8 +89,12 @@
   }
 
   function createShell({ now = () => new Date() } = {}) {
-    let cwd = HOME, previous = HOME, font = "jetbrains";
+    let cwd = HOME, previous = HOME, font = "jetbrains", fontStyle = "normal", fontWeight = 400;
     const history = [];
+    function resolveCommand(word) {
+      const path = word.includes("/") ? normalizePath(word, cwd) : "/bin/" + word;
+      return Object.hasOwn(EXECUTABLES, path) ? EXECUTABLES[path] : null;
+    }
     function requireDirectory(path) {
       if (!exists(path)) throw new Error("No such directory: " + path);
       if (!isDirectory(path)) throw new Error("Not a directory: " + path);
@@ -100,14 +108,21 @@
       history.push(line);
       if (history.length > 100) history.shift();
       try {
-        const [command, ...args] = tokenize(line).map((token) => token.value);
-        if (!COMMANDS.includes(command)) throw new Error("Command not found: " + command);
+        const [word, ...args] = tokenize(line).map((token) => token.value);
+        const command = resolveCommand(word);
+        if (!command) {
+          if (word.includes("/")) {
+            const path = normalizePath(word, cwd);
+            throw new Error((isDirectory(path) ? "Is a directory: " : exists(path) ? "Permission denied: " : "No such executable: ") + word);
+          }
+          throw new Error("Command not found: " + word);
+        }
         if (args.length === 1 && args[0] === "--help") return { output: HELP[command] };
         switch (command) {
           case "help": {
             if (args.length > 1) throw new Error("Usage: help [command]");
             if (args.length && !Object.hasOwn(HELP, args[0])) throw new Error("No help available for: " + args[0]);
-            return { output: args.length ? HELP[args[0]] : Object.values(HELP).join("\n") + "\n\n~ = /home/knight. Virtual filesystem; no variable expansion or script execution." };
+            return { output: args.length ? HELP[args[0]] : Object.values(HELP).join("\n") + "\n\nPATH = /bin; ~ = /home/knight. Virtual filesystem; no variable expansion or script execution." };
           }
           case "ls":
           case "dir": {
@@ -127,7 +142,7 @@
             if (!exists(path)) throw new Error("No such file or directory: " + path);
             let entries = isDirectory(path) ? children(path) : [{ name: path.split("/").pop(), path, directory: false }];
             if (all && isDirectory(path)) entries = [{ name: ".", path, directory: true }, { name: "..", path: normalizePath("..", path), directory: true }, ...entries];
-            return { output: long ? entries.map((entry) => (entry.directory ? "dr-xr-xr-x" : "-r--r--r--") + "  " + entry.name + (entry.directory ? "/" : "")).join("\n") : entries.map((entry) => entry.name + (entry.directory ? "/" : "")).join("  ") };
+            return { output: long ? entries.map((entry) => (entry.directory ? "dr-xr-xr-x" : Object.hasOwn(EXECUTABLES, entry.path) ? "-r-xr-xr-x" : "-r--r--r--") + "  " + entry.name + (entry.directory ? "/" : "")).join("\n") : entries.map((entry) => entry.name + (entry.directory ? "/" : "")).join("  ") };
           }
           case "pwd": noArguments(args); return { output: cwd };
           case "cd": {
@@ -167,10 +182,23 @@
           case "whoami": noArguments(args); return { output: "Knight" };
           case "date": noArguments(args); return { output: now().toLocaleString("en-GB", { hour12: false }) };
           case "font": {
-            if (args.length > 1) throw new Error("Usage: font [jetbrains|maple|system]");
-            if (args.length && !Object.hasOwn(FONTS, args[0])) throw new Error("Unknown font: " + args[0] + ". Available fonts: jetbrains, maple, system.");
-            if (args.length) font = args[0];
-            return { output: "Font: " + FONTS[font], font };
+            if (args.includes("--help")) return { output: HELP.font };
+            let nextFont = font, nextStyle = fontStyle, nextWeight = fontWeight, familySet = false;
+            for (const arg of args) {
+              if (Object.hasOwn(FONTS, arg)) {
+                if (familySet) throw new Error("Specify only one font family.");
+                nextFont = arg;
+                familySet = true;
+              } else if (arg === "normal" || arg === "--normal") { nextWeight = 400; nextStyle = "normal"; }
+              else if (arg === "bold" || arg === "--bold") nextWeight = 700;
+              else if (arg === "italic" || arg === "--italic") nextStyle = "italic";
+              else throw new Error("Unknown font or style: " + arg + ". See font --help.");
+            }
+            font = nextFont;
+            fontStyle = nextStyle;
+            fontWeight = nextWeight;
+            const style = [fontWeight === 700 ? "bold" : "", fontStyle === "italic" ? "italic" : ""].filter(Boolean).join(" ") || "normal";
+            return { output: "Font: " + FONTS[font] + " (" + style + ")", font, fontStyle, fontWeight };
           }
           case "clear": noArguments(args); return { output: "", clear: true };
           case "history": noArguments(args); return { output: history.map((entry, index) => String(index + 1).padStart(3) + "  " + entry).join("\n") };
@@ -190,16 +218,17 @@
         if (fullToken) replaceEnd = fullToken.end;
       } catch { /* 补全只取光标之前的有效输入。 */ }
       let matches = [];
-      if (tokens.length === 1) matches = COMMANDS.filter((command) => command.startsWith(token.value));
-      else if (tokens[0].value === "help") matches = COMMANDS.filter((command) => command.startsWith(token.value));
-      else if (tokens[0].value === "font") matches = Object.keys(FONTS).filter((name) => name.startsWith(token.value));
-      else if (["ls", "dir", "tree", "cd", "cat"].includes(tokens[0].value)) {
+      const command = resolveCommand(tokens[0].value);
+      if (tokens.length === 1 && !token.value.includes("/")) matches = COMMANDS.filter((name) => name.startsWith(token.value));
+      else if (tokens.length > 1 && command === "help") matches = COMMANDS.filter((name) => name.startsWith(token.value));
+      else if (tokens.length > 1 && command === "font") matches = [...Object.keys(FONTS), "normal", "bold", "italic", "--normal", "--bold", "--italic", "--help"].filter((name) => name.startsWith(token.value));
+      else if (tokens.length === 1 || ["ls", "dir", "tree", "cd", "cat"].includes(command)) {
         const split = token.value.lastIndexOf("/") + 1;
         const base = token.value.slice(0, split);
         const name = token.value.slice(split);
         const directory = normalizePath(base || ".", cwd);
         if (isDirectory(directory)) matches = children(directory)
-          .filter((entry) => entry.name.startsWith(name) && (!["cd", "tree"].includes(tokens[0].value) || entry.directory))
+          .filter((entry) => entry.name.startsWith(name) && (!["cd", "tree"].includes(command) || entry.directory) && (tokens.length > 1 || entry.directory || Object.hasOwn(EXECUTABLES, entry.path)))
           .map((entry) => base + entry.name + (entry.directory ? "/" : ""));
       }
       if (!matches.length) return { line, cursor, matches };
