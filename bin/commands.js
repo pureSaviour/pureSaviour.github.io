@@ -6,7 +6,7 @@
   "use strict";
 
   const HOME = "/home/knight";
-  const COMMANDS = ["help", "ls", "dir", "tree", "pwd", "cd", "cat", "echo", "whoami", "date", "clear", "history", "font"];
+  const BIN = HOME + "/bin";
   const FONTS = Object.freeze({ jetbrains: "JetBrains Mono", maple: "Maple Mono", system: "System monospace" });
   const HELP = {
     help: "help [command]         List commands or show command usage",
@@ -24,17 +24,20 @@
     font: "font [family] [style...]\n  Applies to the terminal and the greeting code.\n  Families: jetbrains, maple, system\n  Styles:   normal, bold, italic (also --normal, --bold, --italic)\n  normal resets weight and slant; bold and italic can be combined.\n  --help    Show this help without changing the font\n\n  font jetbrains bold italic\n  font --normal\n  font --help"
   };
 
-  const EXECUTABLES = Object.freeze(Object.fromEntries(COMMANDS.map((name) => ["/bin/" + name, name])));
+  const COMMANDS = Object.keys(HELP);
+  const directory = Object.freeze({ type: "directory" });
 
   // 仅是个人主页的虚拟内容，与服务器或访客设备的文件无关。
   const FILES = Object.freeze({
-    "/": null,
-    "/bin": null,
-    ...Object.fromEntries(COMMANDS.map((name) => ["/bin/" + name, "Virtual command: " + name + "\n" + HELP[name] + "\n"])),
-    "/home": null,
-    "/home/knight": null,
-    "/home/knight/about.txt": "Knight\nLearning, building, and staying curious.\n",
-    "/home/knight/links.txt": "GitHub  https://github.com/pureSaviour\nHome    https://puresaviour.github.io/\n"
+    "/": directory,
+    "/home": directory,
+    [HOME]: directory,
+    [HOME + "/about.txt"]: Object.freeze({ type: "file", content: "Knight\nLearning, building, and staying curious.\n" }),
+    [HOME + "/links.txt"]: Object.freeze({ type: "file", content: "GitHub  https://github.com/pureSaviour\nHome    https://puresaviour.github.io/\n" }),
+    [BIN]: directory,
+    ...Object.fromEntries(COMMANDS.map((name) => [BIN + "/" + name, Object.freeze({
+      type: "executable", command: name, content: "Virtual command: " + name + "\n" + HELP[name] + "\n"
+    })]))
   });
 
   function tokenize(line, partial = false) {
@@ -81,7 +84,8 @@
   }
 
   const exists = (path) => Object.hasOwn(FILES, path);
-  const isDirectory = (path) => exists(path) && FILES[path] === null;
+  const isDirectory = (path) => exists(path) && FILES[path].type === "directory";
+  const isExecutable = (path) => exists(path) && FILES[path].type === "executable";
   function children(path) {
     const prefix = path === "/" ? "/" : path + "/";
     return Object.keys(FILES).filter((key) => key.startsWith(prefix) && key !== path && !key.slice(prefix.length).includes("/"))
@@ -92,8 +96,8 @@
     let cwd = HOME, previous = HOME, font = "jetbrains", fontStyle = "normal", fontWeight = 400;
     const history = [];
     function resolveCommand(word) {
-      const path = word.startsWith("bin/") ? normalizePath("/" + word, cwd) : word.includes("/") ? normalizePath(word, cwd) : "/bin/" + word;
-      return Object.hasOwn(EXECUTABLES, path) ? EXECUTABLES[path] : null;
+      const path = word.includes("/") || word === "~" ? normalizePath(word, cwd) : BIN + "/" + word;
+      return isExecutable(path) ? FILES[path].command : null;
     }
     function requireDirectory(path) {
       if (!exists(path)) throw new Error("No such directory: " + path);
@@ -116,14 +120,8 @@
         const [word, ...args] = tokenize(line).map((token) => token.value);
         const command = resolveCommand(word);
         if (!command) {
-          const directory = word === "bin" || word.startsWith("bin/") ? normalizePath("/" + word, cwd) : normalizePath(word, cwd);
-          if (isDirectory(directory)) {
-            noArguments(args);
-            changeDirectory(directory);
-            return { output: "" };
-          }
-          if (word.includes("/")) {
-            const path = normalizePath(word, cwd);
+          const path = normalizePath(word, cwd);
+          if (word.includes("/") || exists(path)) {
             throw new Error((isDirectory(path) ? "Is a directory: " : exists(path) ? "Permission denied: " : "No such executable: ") + word);
           }
           throw new Error("Command not found: " + word);
@@ -133,7 +131,7 @@
           case "help": {
             if (args.length > 1) throw new Error("Usage: help [command]");
             if (args.length && !Object.hasOwn(HELP, args[0])) throw new Error("No help available for: " + args[0]);
-            return { output: args.length ? HELP[args[0]] : Object.values(HELP).join("\n") + "\n\nPATH = /bin; ~ = /home/knight. Type bin to enter /bin, then ls to list executables.\nDirectory paths also change the working directory. Virtual filesystem; no variable expansion or script execution." };
+            return { output: args.length ? HELP[args[0]] : Object.values(HELP).join("\n") + "\n\nPATH = ~/bin; ~ = /home/knight.\nVirtual filesystem; no variable expansion or script execution." };
           }
           case "ls":
           case "dir": {
@@ -153,7 +151,7 @@
             if (!exists(path)) throw new Error("No such file or directory: " + path);
             let entries = isDirectory(path) ? children(path) : [{ name: path.split("/").pop(), path, directory: false }];
             if (all && isDirectory(path)) entries = [{ name: ".", path, directory: true }, { name: "..", path: normalizePath("..", path), directory: true }, ...entries];
-            return { output: long ? entries.map((entry) => (entry.directory ? "dr-xr-xr-x" : Object.hasOwn(EXECUTABLES, entry.path) ? "-r-xr-xr-x" : "-r--r--r--") + "  " + entry.name + (entry.directory ? "/" : "")).join("\n") : entries.map((entry) => entry.name + (entry.directory ? "/" : "")).join("  ") };
+            return { output: long ? entries.map((entry) => (entry.directory ? "dr-xr-xr-x" : isExecutable(entry.path) ? "-r-xr-xr-x" : "-r--r--r--") + "  " + entry.name + (entry.directory ? "/" : "")).join("\n") : entries.map((entry) => entry.name + (entry.directory ? "/" : "")).join("  ") };
           }
           case "pwd": noArguments(args); return { output: cwd };
           case "cd": {
@@ -168,7 +166,7 @@
               const path = normalizePath(arg, cwd);
               if (!exists(path)) throw new Error("No such file: " + path);
               if (isDirectory(path)) throw new Error("Is a directory: " + path);
-              return FILES[path];
+              return FILES[path].content;
             }).join("") };
           }
           case "tree": {
@@ -228,16 +226,16 @@
       } catch { /* 补全只取光标之前的有效输入。 */ }
       let matches = [];
       const command = resolveCommand(tokens[0].value);
-      if (tokens.length === 1 && !token.value.includes("/")) matches = [...COMMANDS, "bin/"].filter((name) => name.startsWith(token.value));
+      if (tokens.length === 1 && !token.value.includes("/")) matches = children(BIN).filter((entry) => isExecutable(entry.path) && entry.name.startsWith(token.value)).map((entry) => entry.name);
       else if (tokens.length > 1 && command === "help") matches = COMMANDS.filter((name) => name.startsWith(token.value));
       else if (tokens.length > 1 && command === "font") matches = [...Object.keys(FONTS), "normal", "bold", "italic", "--normal", "--bold", "--italic", "--help"].filter((name) => name.startsWith(token.value));
       else if (tokens.length === 1 || ["ls", "dir", "tree", "cd", "cat"].includes(command)) {
         const split = token.value.lastIndexOf("/") + 1;
         const base = token.value.slice(0, split);
         const name = token.value.slice(split);
-        const directory = normalizePath(tokens.length === 1 && base.startsWith("bin/") ? "/" + base : base || ".", cwd);
+        const directory = normalizePath(base || ".", cwd);
         if (isDirectory(directory)) matches = children(directory)
-          .filter((entry) => entry.name.startsWith(name) && (!["cd", "tree"].includes(command) || entry.directory) && (tokens.length > 1 || entry.directory || Object.hasOwn(EXECUTABLES, entry.path)))
+          .filter((entry) => entry.name.startsWith(name) && (!["cd", "tree"].includes(command) || entry.directory) && (tokens.length > 1 || entry.directory || isExecutable(entry.path)))
           .map((entry) => base + entry.name + (entry.directory ? "/" : ""));
       }
       if (!matches.length) return { line, cursor, matches };

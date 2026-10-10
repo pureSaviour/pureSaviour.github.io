@@ -5,11 +5,11 @@ const { createShell } = require("../bin/commands.js");
 test("browses the same virtual files with ls, dir, cat and tree", () => {
   const shell = createShell();
   assert.equal(shell.execute("pwd").output, "/home/knight");
-  assert.equal(shell.execute("ls").output, "about.txt  links.txt");
+  assert.equal(shell.execute("ls").output, "about.txt  links.txt  bin/");
   assert.equal(shell.execute("dir").output, shell.execute("ls").output);
   assert.match(shell.execute("ls -al").output, /dr-xr-xr-x  \.\//);
   assert.match(shell.execute("cat about.txt links.txt").output, /Knight\nLearning, building, and staying curious.\nGitHub  https:\/\/github.com\/pureSaviour/);
-  assert.equal(shell.execute("tree").output, ".\n├── about.txt\n└── links.txt");
+  assert.match(shell.execute("tree").output, /^\.\n├── about.txt\n├── links.txt\n└── bin\//);
   assert.match(shell.execute("tree /").output, /home\/\n    └── knight\//);
 });
 
@@ -85,7 +85,7 @@ test("completes commands, relative and absolute paths, quoted names and cursor p
   assert.equal(shell.complete("cat ~/ab").line, "cat ~/about.txt ");
   assert.equal(shell.complete("cd /ho").line, "cd /home/");
   assert.deepEqual(shell.complete("cd ab").matches, []);
-  assert.deepEqual(shell.complete("cat ").matches, ["about.txt", "links.txt"]);
+  assert.deepEqual(shell.complete("cat ").matches, ["about.txt", "links.txt", "bin/"]);
   assert.equal(shell.complete("help wh").line, "help whoami ");
   assert.equal(shell.complete("cat about.txt", 2).line, "cat about.txt");
   assert.equal(shell.complete("cat about.txt", 6).line, "cat about.txt ");
@@ -113,49 +113,60 @@ test("uses English for built-in output and changes fonts only within a session",
 });
 
 
-test("exposes every command as an executable in /bin with path-based invocation", () => {
+test("exposes every command as an executable in ~/bin with path-based invocation", () => {
   const names = ["help", "ls", "dir", "tree", "pwd", "cd", "cat", "echo", "whoami", "date", "clear", "history", "font"];
   const shell = createShell();
-  assert.deepEqual(shell.execute("ls /bin").output.split("  "), names);
-  assert.equal(shell.execute("ls -l /bin").output.split("\n").length, names.length);
+  assert.deepEqual(shell.execute("ls ~/bin").output.split("  "), names);
+  assert.equal(shell.execute("ls -l ~/bin").output.split("\n").length, names.length);
   for (const name of names) {
-    assert.equal(shell.execute(`/bin/${name} --help`).output, shell.execute(`${name} --help`).output, name);
-    assert.match(shell.execute(`cat /bin/${name}`).output, new RegExp(`^Virtual command: ${name}\\n`));
-    assert.match(shell.execute(`ls -l /bin/${name}`).output, /^-r-xr-xr-x/);
+    assert.equal(shell.execute(`~/bin/${name} --help`).output, shell.execute(`${name} --help`).output, name);
+    assert.match(shell.execute(`cat ~/bin/${name}`).output, new RegExp(`^Virtual command: ${name}\\n`));
+    assert.match(shell.execute(`ls -l ~/bin/${name}`).output, /^-r-xr-xr-x/);
   }
-  assert.match(shell.execute("tree /bin").output, /font/);
-  shell.execute("cd /bin");
+  assert.match(shell.execute("tree ~/bin").output, /font/);
+  shell.execute("cd ~/bin");
   assert.equal(shell.execute("./echo hello").output, "hello");
-  assert.equal(shell.execute("../bin/pwd").output, "/bin");
+  assert.equal(shell.execute("../bin/pwd").output, "/home/knight/bin");
   assert.equal(shell.execute("echo from PATH").output, "from PATH");
-  assert.equal(shell.execute("/bin/missing").error, true);
-  assert.equal(shell.execute("/bin").error, undefined);
+  assert.equal(shell.execute("~/bin/missing").error, true);
+  assert.equal(shell.execute("/home/knight/bin").error, true);
   assert.match(shell.execute("/home/knight/about.txt").output, /Permission denied/);
   assert.equal(shell.complete("./fo").line, "./font ");
-  assert.equal(shell.complete("/bin/fo").line, "/bin/font ");
-  assert.equal(shell.complete("/bin/font --i").line, "/bin/font --italic ");
-  assert.equal(shell.complete("cd /b").line, "cd /bin/");
+  assert.equal(shell.complete("~/bin/fo").line, "~/bin/font ");
+  assert.equal(shell.complete("~/bin/font --i").line, "~/bin/font --italic ");
+  assert.equal(shell.complete("cd ~/b").line, "cd ~/bin/");
 });
 
-test("enters bin directly and invokes its executable entries", () => {
+test("browses home bin as a directory and changes directories only through cd", () => {
   const shell = createShell();
-  assert.equal(shell.complete("bi").line, "bin/");
+  assert.match(shell.execute("ls").output, /bin\//);
+  assert.match(shell.execute("ls -l bin").output, /-r-xr-xr-x  font/);
+  assert.equal(shell.complete("cd bi").line, "cd bin/");
   assert.equal(shell.complete("bin/fo").line, "bin/font ");
+  assert.deepEqual(shell.complete("bi").matches, []);
   assert.equal(shell.execute("bin/echo from home").output, "from home");
-  assert.equal(shell.execute("bin extra").error, true);
-  assert.equal(shell.cwd, "/home/knight");
-  assert.equal(shell.execute("bin").output, "");
-  assert.equal(shell.cwd, "/bin");
-  assert.equal(shell.promptPath, "/bin");
+  assert.equal(shell.execute("~/bin/echo from home").output, "from home");
+  assert.equal(shell.execute("/home/knight/bin/echo absolute path").output, "absolute path");
+  for (const command of ["bin", "bin/", "./bin", "~", "/home/knight", "cd bin extra"]) {
+    assert.equal(shell.execute(command).error, true, command);
+    assert.equal(shell.cwd, "/home/knight", command);
+  }
+  assert.equal(shell.execute("cd bin").output, "");
+  assert.equal(shell.cwd, "/home/knight/bin");
+  assert.equal(shell.promptPath, "~/bin");
   assert.match(shell.execute("ls").output, /echo.*font/);
   assert.equal(shell.execute("./echo executable").output, "executable");
   assert.equal(shell.execute("font bold").fontWeight, 700);
-  assert.equal(shell.execute("cd -").output, "/home/knight");
-  assert.equal(shell.execute("bin/").error, undefined);
-  assert.equal(shell.cwd, "/bin");
-  shell.execute("/home/knight");
+  assert.equal(shell.execute("bin/echo wrong relative path").error, true);
+  assert.deepEqual(shell.complete("bin/fo").matches, []);
+  assert.equal(shell.execute("cd ..").output, "");
+  assert.equal(shell.promptPath, "~");
+  assert.equal(shell.execute("cd -").output, "/home/knight/bin");
+  shell.execute("cd");
   assert.equal(shell.cwd, "/home/knight");
+  assert.equal(shell.execute("cd bin/font").error, true);
   assert.equal(shell.execute("about.txt").error, true);
+  assert.equal(shell.cwd, "/home/knight");
 });
 
 test("font styles combine, reset, validate atomically and support --help", () => {
