@@ -4,7 +4,7 @@ Knight 的个人主页：记录学习、实践与思考。
 
 [访问主页](https://puresaviour.github.io/) · [隐私政策](https://puresaviour.github.io/privacy.html)
 
-纯 HTML + CSS，无 JavaScript、无构建步骤。项目和笔记有真实素材后再添加。
+HTML + CSS + 原生 JavaScript，无依赖、无构建步骤。项目和笔记有真实素材后再添加。
 
 ## 本地预览
 
@@ -21,8 +21,22 @@ python -m http.server 4173 --bind 127.0.0.1
 - `index.html`：展示名、简介、导航与对外链接。
 - `privacy.html`：隐私政策；网站数据处理发生变化时同步更新。
 - `style.css`：字体、颜色、间距和手机布局。
+- `terminal-core.js`：虚拟目录、命令处理与补全；在 `FILES` 中维护虚拟文件。
+- `terminal.js`：终端展示、输入与键盘交互。
 - `assets/favicon.svg`：浏览器标签图标。
 - `docs/design-brief.md`：已确认的设计约定。
+
+## 模拟终端
+
+首页默认展开。支持 `help`、`ls` / `dir`、`tree`、`pwd`、`cd`、`cat`、`echo`、`whoami`、`date`、`clear` 和 `history`。输入 `help <命令>` 或 `<命令> --help` 查看用法。初始目录为 `/home/knight`，包含 `about.txt` 与 `links.txt`。
+
+Enter 执行、↑↓ 翻历史、Tab 补全、Ctrl + L 清屏；Shift + Tab 可离开输入框。不支持管道、重定向、变量展开或脚本。虚拟内容与终端状态只存在于浏览器内存中，刷新清空，不发送命令请求、不访问真实文件系统。
+
+运行命令逻辑检查：
+
+```sh
+node tests/terminal.test.cjs
+```
 
 ## GitHub Pages
 

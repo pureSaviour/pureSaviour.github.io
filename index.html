@@ -14,6 +14,8 @@
     <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
     <link rel="preload" href="./assets/fonts/maple-mono.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="./style.css">
+    <script src="./terminal-core.js" defer></script>
+    <script src="./terminal.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到正文</a>
@@ -33,6 +35,28 @@
           <!-- 在这里修改个人简介。项目、笔记有真实内容后，再添加对应栏目。 -->
           <p class="description">记录学习、实践与思考。</p>
           <p class="signature" aria-hidden="true"><span class="accent">&gt;</span> stay curious<span class="cursor">_</span></p>
+        </section>
+
+        <section class="terminal-section" id="terminal" aria-labelledby="terminal-title" data-terminal>
+          <div class="section-heading terminal-heading">
+            <h2 id="terminal-title">模拟终端</h2>
+            <span class="section-note" aria-hidden="true">just a little shell</span>
+          </div>
+          <div class="terminal-window">
+            <div class="terminal-bar">
+              <span class="terminal-label" aria-hidden="true">~/ terminal</span>
+              <span data-terminal-path>/home/knight</span>
+            </div>
+            <div class="terminal-log" role="log" aria-label="终端输出" aria-live="polite" aria-relevant="additions" tabindex="0" data-terminal-log></div>
+            <form class="terminal-form" aria-label="终端命令">
+              <span class="terminal-prompt" aria-hidden="true" data-terminal-prompt>knight:~ $</span>
+              <label class="sr-only" for="terminal-input">输入终端命令</label>
+              <input id="terminal-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" maxlength="2048" aria-describedby="terminal-hint terminal-note" placeholder="help" disabled>
+            </form>
+          </div>
+          <p class="terminal-hint" id="terminal-hint" data-terminal-hint>启用 JavaScript 后即可输入命令。</p>
+          <p class="terminal-note" id="terminal-note">这里是一套只读虚拟目录，输入仅在当前页面内处理。</p>
+          <noscript><p class="terminal-note">浏览器未启用 JavaScript，模拟终端暂不可用。你仍可浏览主页和 GitHub 链接。</p></noscript>
         </section>
 
         <section class="elsewhere" aria-labelledby="elsewhere-title">
